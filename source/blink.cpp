@@ -138,7 +138,7 @@ void blink::application::run()
 						continue;
 
 					const auto it = std::find_if(_source_files[i].begin(), _source_files[i].end(),
-						[](const auto &path) { return path.extension() == ".cpp"; });
+						[](const auto &path) { return path.extension() == ".cpp" || path.extension() == ".c"; });
 
 					if (it != _source_files[i].end())
 					{
@@ -246,7 +246,7 @@ void blink::application::run()
 				_source_dir / std::wstring(info->FileName, info->FileNameLength / sizeof(WCHAR));
 
 			// Ignore changes to files that are not C++ source files
-			if (source_file.extension() != ".cpp")
+			if (source_file.extension() != ".cpp" && source_file.extension() != ".c")
 				continue;
 
 			// Ignore duplicated notifications by comparing times and skipping any changes that are not older than 3 seconds
