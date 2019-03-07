@@ -135,16 +135,26 @@ int main(int argc, char *argv[])
 			for (int i = 1; i < argc; ++i, command_line += ' ')
 				command_line += argv[i];
 
-			if (!CreateProcessA(nullptr, command_line.data(), nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, nullptr, nullptr, &startup_info, &process_info))
+			BOOL rc = CreateProcessA(nullptr, command_line.data(), nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE | CREATE_SUSPENDED, nullptr, nullptr, &startup_info, &process_info);
+			if (rc)
+			{
+				HANDLE job = CreateJobObject(nullptr, nullptr);
+				JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = {};
+				info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+				SetInformationJobObject(job, JobObjectExtendedLimitInformation, &info, sizeof(info));
+				rc = AssignProcessToJobObject(job, process_info.hProcess);
+				if (rc) {
+					rc = ResumeThread(process_info.hThread) != (DWORD)-1;
+				}
+			}
+			
+			if (!rc)
 			{
 				std::cout << "Failed to start target application process!" << std::endl;
 				return GetLastError();
 			}
 
 			pid = process_info.dwProcessId;
-
-			CloseHandle(process_info.hThread);
-			CloseHandle(process_info.hProcess);
 		}
 	}
 
